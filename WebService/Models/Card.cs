@@ -7,7 +7,7 @@ namespace WebService.Models
 {
     public class Card
     {
-        //nr karty, data ważności (MM/RR), kod bezpieczeństwa CVV/CCV (3 cyfry)
+        //nr karty 16, data ważności (MM/RR), kod bezpieczeństwa CVV/CCV (3 cyfry)
         private readonly string NumberOfCard;
         private readonly short SaveCode;
         private readonly byte Month;

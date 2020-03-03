@@ -28,8 +28,7 @@ namespace WebService
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            //services.AddDbContext<BankDbContext>(options => options.UseSqlite("Data Source=c:\\repos\\db\\mydb.db"));
-            //services.AddIdentity<User, IdentityRole>().AddUserStore<BankDbContext>();
+            services.AddSingleton<BankDb>();
             services.AddControllers();
         }
 
@@ -37,8 +36,6 @@ namespace WebService
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             app.UseRouting();
-
-            //app.UseAuthentication();
 
             app.UseEndpoints(endpoints =>
             {

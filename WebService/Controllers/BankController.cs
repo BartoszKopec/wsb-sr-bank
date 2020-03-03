@@ -4,56 +4,49 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using WebService.Models;
+using WebService.Services;
 
 namespace WebService.Controllers
 {
     [Route("bank")]
     public class BankController : ControllerBase
     {
-        private static readonly List<Account> accounts = new List<Account>
-        {
-            new Account("Jan", "Kowalski", "12345678901", 100M, "NR KONTA", null),
-            new Account("Jan", "Kowalski", "12345678901", 100M, "NR KONTA", null),
-            new Account("Jan", "Kowalski", "12345678901", 100M, "NR KONTA", null),
-        };
+        private readonly BankDb _db;
 
-        [HttpPost("transfer")]
+        public BankController(BankDb db)
+        {
+            _db = db;
+        }
+
+        [HttpPost("transfer")] //http://localhost:5000/bank/transfer?amount=25.00&accountNumberSender=1234&accountNumberReciver=qwer
         public IActionResult TransferMoney(decimal amount, string accountNumberSender, string accountNumberReciver)
         {
-            Account accountSender=null, accountReceiver=null;
+            Payment sender = _db.ReadPayment(accountNumberSender),
+                receiver = _db.ReadPayment(accountNumberReciver);
 
-            for (int i = 0; i < accounts.Count; i++)
-            {
-                Account account = accounts[i];
-                if (account.AccountNumber == accountNumberSender)
-                    accountSender = account;
-                if (account.AccountNumber == accountNumberReciver)
-                    accountReceiver = account;
-            }
+            if(sender is null || receiver is null)
+                return BadRequest("Błędne numery kont");
 
-            if (accountSender == null || accountReceiver == null)
-            {
-                return BadRequest("błędne numery kont");
-            }
+            if(amount > sender.AccountBalance)
+                return BadRequest("Zbyt mała kwota na koncie");
 
-            decimal newSenderAmount = Transfer(accountSender, accountReceiver, amount);
-            return Ok(newSenderAmount);
+            sender.AccountBalance -= amount;
+            receiver.AccountBalance += amount;
+
+            _db.UpdatePayment(sender);
+            _db.UpdatePayment(receiver);
+
+            return Ok(new { Sender = sender, Reciver = receiver});
         }
 
-
-        private decimal ChangeAccountBalance(Account account, decimal amount)
+        [HttpGet("payment/{accountNumber}")] //http://localhost:5000/bank/payment/1234
+        public IActionResult GetPayment(string accountNumber)
         {
-            account.AccountBalance += amount;
-            return account.AccountBalance;
+            Payment payment = _db.ReadPayment(accountNumber);
+            if (payment is null)
+                return BadRequest("Brak takiego konta płatnościowego");
+            else
+                return Ok(payment);
         }
-
-        private decimal Transfer(Account accountSender, Account accountReceiver, decimal amount)
-        {
-            accountSender.AccountBalance -= amount;
-            accountReceiver.AccountBalance += amount;
-
-            return accountSender.AccountBalance;
-        }
-
     }
 }
