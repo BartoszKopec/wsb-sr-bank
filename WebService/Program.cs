@@ -13,6 +13,7 @@ namespace WebService
     {
         public static void Main(string[] args)
         {
+            Console.WriteLine("Dzieñ dobry");
             CreateHostBuilder(args).Build().Run();
         }
 
