@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using WebService.Models;
 using LiteDB;
 using Microsoft.Extensions.Logging;
+using System.Threading;
 
 namespace WebService.Services
 {
@@ -20,22 +21,10 @@ namespace WebService.Services
         public BankDb(ILogger<BankDb> logger)
         {
             _logger = logger;
-            TemporaryFillDatabase();
-            Task.Run(()=>
-            {
-                _logger.LogInformation("Uruchomiono wątek w tle");
-                while (true)
-                {
-                    Task.Delay(500);
-                    if (queuePayments.Count > 0 && !isPaymentQueueMovedToDB) 
-                    {
-                        SavePaymentQueueToFile();
-                    }
-                }
-            });
-            
+            Task.Factory.StartNew(SavingPaymentQueueToDB,
+                TaskCreationOptions.LongRunning);
         }
-        
+
         public Payment ReadPayment(string accountNumber)
         {
             Payment payment;
@@ -47,8 +36,7 @@ namespace WebService.Services
             {
                 using LiteDatabase db = new LiteDatabase(_dbPaymentsPath);
                 ILiteCollection<Payment> payments = db.GetCollection<Payment>();
-
-                payment = payments.FindOne(p => p.AccountNumber == accountNumber);
+                payment = payments.FindOne(p => p.AccountNumber == accountNumber);                
             }
             _logger.LogInformation("Odczytano poprawnie obiekt klasy Payment");
             return payment;
@@ -124,8 +112,14 @@ namespace WebService.Services
             using LiteDatabase db = new LiteDatabase(_dbAccountsPath);
 
             ILiteCollection<Account> accounts = db.GetCollection<Account>();
+            ILiteCollection<Payment> payments = db.GetCollection<Payment>();
 
             int id = accounts.Insert(account);
+            payments.Insert(new Payment
+            {
+                AccountNumber = account.AccountNumber,
+                AccountBalance = account.AccountBalance
+            });
 
             _logger.LogInformation("Dodano poprawnie obiekt klasy Account");
 
@@ -161,25 +155,36 @@ namespace WebService.Services
             });
         }
 
-        private void SavePaymentQueueToFile()
+        private void SavingPaymentQueueToDB()
         {
-            _logger.LogInformation("Wstawienie wypełnionej kolejki do bazy");
-            isPaymentQueueMovedToDB = true;
-            using LiteDatabase db = new LiteDatabase(_dbPaymentsPath);
-            ILiteCollection<Payment> payments = db.GetCollection<Payment>();
-            lock (queuePayments)
+            _logger.LogInformation("Uruchomiono wątek w tle");
+            while (true)
             {
-                queuePayments.ForEach(element =>
+                
+                //Debug.WriteLine("Wątek 1 zgłasza się");
+                if (queuePayments.Count > 0 && !isPaymentQueueMovedToDB)
                 {
-                    if (payments.Exists(p => p.AccountNumber == element.AccountNumber))
-                        payments.Update(element);
-                    else
-                        payments.Insert(element);
-                });
-                queuePayments.Clear();
+                    _logger.LogInformation("Wstawienie wypełnionej kolejki do bazy");
+                    isPaymentQueueMovedToDB = true;
+                    using LiteDatabase db = new LiteDatabase(_dbPaymentsPath);
+                    ILiteCollection<Payment> payments = db.GetCollection<Payment>();
+                    lock (queuePayments)
+                    {
+                        queuePayments.ForEach(element =>
+                        {
+                            if (payments.Exists(p => p.AccountNumber == element.AccountNumber))
+                                payments.Update(element);
+                            else
+                                payments.Insert(element);
+                        });
+                        queuePayments.Clear();
+                    }
+                    isPaymentQueueMovedToDB = false;
+                    _logger.LogInformation("Poprawnie zapisano kolejkę do bazy");
+
+                }
+                Thread.Sleep(1000);
             }
-            isPaymentQueueMovedToDB = false;
-            _logger.LogInformation("Poprawnie zapisano kolejkę do bazy");
         }
     }
 }
