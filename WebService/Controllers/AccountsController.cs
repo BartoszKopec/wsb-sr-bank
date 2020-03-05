@@ -1,9 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using System;
+﻿using Core.Models;
+using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using WebService.Models;
 using WebService.Services;
 
 namespace WebService.Controllers
@@ -21,7 +18,7 @@ namespace WebService.Controllers
         [HttpPost("insert")]
         public IActionResult Insert([FromBody]Account account)
         {
-            if(_db.ReadAccounts().Find(a=>a.Pesel == account.Pesel) is null)
+            if (_db.ReadAccounts().Find(a => a.Pesel == account.Pesel) is null)
             {
                 int id = _db.AddAccount(account);
                 return Created($"/accounts/get/{id}", new { Id = id });
@@ -36,8 +33,8 @@ namespace WebService.Controllers
         public IActionResult GetOne(int id)
         {
             Account account = _db.ReadAccount(id);
-            
-            if(account is null)
+
+            if (account is null)
             {
                 return BadRequest("Nie ma takiego konta");
             }

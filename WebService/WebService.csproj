@@ -12,5 +12,9 @@
     <PackageReference Include="sqlite-net-pcl" Version="1.7.302-beta" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Core\Core.csproj" />
+  </ItemGroup>
+
 
 </Project>

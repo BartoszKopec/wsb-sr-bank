@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace WebService.Models
+﻿namespace Core.Models
 {
     public class Card
     {
@@ -14,6 +9,6 @@ namespace WebService.Models
         public byte Month { get; set; }
         public byte Year { get; set; }
 
-        public string GetExpirationDate() => string.Format("{0}/{1}", Month, Year); //$"{Month}/{Year}"; //Month.ToString() + "/" + Year.ToString()
+        public string GetExpirationDate() => string.Format("{0}/{1}", Month, Year);
     }
 }

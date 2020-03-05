@@ -1,9 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using WebService.Models;
+﻿using Core.Models;
+using Microsoft.AspNetCore.Mvc;
 using WebService.Services;
 
 namespace WebService.Controllers
@@ -24,10 +20,10 @@ namespace WebService.Controllers
             Payment sender = _db.ReadPayment(accountNumberSender),
                 receiver = _db.ReadPayment(accountNumberReciver);
 
-            if(sender is null || receiver is null)
+            if (sender is null || receiver is null)
                 return BadRequest("Błędne numery kont");
 
-            if(amount > sender.AccountBalance)
+            if (amount > sender.AccountBalance)
                 return BadRequest("Zbyt mała kwota na koncie");
 
             sender.AccountBalance -= amount;
@@ -36,7 +32,7 @@ namespace WebService.Controllers
             _db.UpdatePayment(sender);
             _db.UpdatePayment(receiver);
 
-            return Ok(new { Sender = sender, Reciver = receiver});
+            return Ok(new { Sender = sender, Reciver = receiver });
         }
 
         [HttpGet("payment/{accountNumber}")] //http://localhost:5000/bank/payment/1234
