@@ -5,7 +5,11 @@ VisualStudioVersion = 16.0.29806.167
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebService", "WebService\WebService.csproj", "{94D7313F-586D-42D7-9F74-9AFB5FFDE03E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebserviceTests", "WebserviceTests\WebserviceTests.csproj", "{64FF3A10-0BC7-42A1-BAB9-39450AD8101C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebserviceTests", "WebserviceTests\WebserviceTests.csproj", "{64FF3A10-0BC7-42A1-BAB9-39450AD8101C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClientApp", "ClientApp\ClientApp.csproj", "{130047AB-A996-486F-8A78-F4D7EB01DC73}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WorkerApp", "WorkerApp\WorkerApp.csproj", "{36E0390B-EEE0-4E07-A1AA-F69841AB9475}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +25,14 @@ Global
 		{64FF3A10-0BC7-42A1-BAB9-39450AD8101C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{64FF3A10-0BC7-42A1-BAB9-39450AD8101C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{64FF3A10-0BC7-42A1-BAB9-39450AD8101C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{130047AB-A996-486F-8A78-F4D7EB01DC73}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{130047AB-A996-486F-8A78-F4D7EB01DC73}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{130047AB-A996-486F-8A78-F4D7EB01DC73}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{130047AB-A996-486F-8A78-F4D7EB01DC73}.Release|Any CPU.Build.0 = Release|Any CPU
+		{36E0390B-EEE0-4E07-A1AA-F69841AB9475}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{36E0390B-EEE0-4E07-A1AA-F69841AB9475}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{36E0390B-EEE0-4E07-A1AA-F69841AB9475}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{36E0390B-EEE0-4E07-A1AA-F69841AB9475}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
