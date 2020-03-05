@@ -15,6 +15,7 @@ namespace WebService
         {
             CreateHostBuilder(args).Build().Run();
         }
+        Console.WriteLine("Dzieñ diobry");
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
