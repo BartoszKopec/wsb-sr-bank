@@ -18,13 +18,18 @@ namespace WebService.Controllers
             _db = db;
         }
 
-        //crud - create read update delete
-
         [HttpPost("insert")]
         public IActionResult Insert([FromBody]Account account)
         {
-            int id = _db.AddAccount(account);
-            return Created($"/accounts/get/{id}", new { Id = id });
+            if(_db.ReadAccounts().Find(a=>a.Pesel == account.Pesel) is null)
+            {
+                int id = _db.AddAccount(account);
+                return Created($"/accounts/get/{id}", new { Id = id });
+            }
+            else
+            {
+                return BadRequest("Taka osoba ma już konto.");
+            }
         }
 
         [HttpGet("get/{id}")]
@@ -74,5 +79,6 @@ namespace WebService.Controllers
             else
                 return BadRequest("Nie ma takiego konta");
         }
+
     }
 }

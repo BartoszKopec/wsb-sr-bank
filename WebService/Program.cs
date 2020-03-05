@@ -15,17 +15,12 @@ namespace WebService
         {
             CreateHostBuilder(args).Build().Run();
         }
-        Console.WriteLine("Dzieñ diobry");
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>();
-                    //webBuilder.UseKestrel(opt =>
-                    //{
-                    //    opt.ListenAnyIP(8000);
-                    //});
                 });
     }
 }

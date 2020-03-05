@@ -1,13 +1,10 @@
-﻿using SQLite;
-using System;
+﻿using LiteDB;
+using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using WebService.Models;
-using LiteDB;
-using Microsoft.Extensions.Logging;
-using System.Threading;
 
 namespace WebService.Services
 {
@@ -15,7 +12,7 @@ namespace WebService.Services
     {
         private readonly List<Payment> queuePayments = new List<Payment>();
         private readonly ILogger<BankDb> _logger;
-        private readonly string _dbPaymentsPath = "payments.db", _dbAccountsPath = "accouts.db";
+        private readonly string _dbPaymentsPath = "payments.db", _dbAccountsPath = "accounts.db";
         private bool isPaymentQueueMovedToDB;
 
         public BankDb(ILogger<BankDb> logger)
@@ -28,7 +25,7 @@ namespace WebService.Services
         public Payment ReadPayment(string accountNumber)
         {
             Payment payment;
-            lock (queuePayments) 
+            lock (queuePayments)
             {
                 payment = queuePayments.Find(element => element.AccountNumber == accountNumber);
             }
@@ -36,7 +33,7 @@ namespace WebService.Services
             {
                 using LiteDatabase db = new LiteDatabase(_dbPaymentsPath);
                 ILiteCollection<Payment> payments = db.GetCollection<Payment>();
-                payment = payments.FindOne(p => p.AccountNumber == accountNumber);                
+                payment = payments.FindOne(p => p.AccountNumber == accountNumber);
             }
             _logger.LogInformation("Odczytano poprawnie obiekt klasy Payment");
             return payment;
@@ -103,22 +100,29 @@ namespace WebService.Services
             bool status = accounts.Delete(account.Id);
 
             _logger.LogInformation("Usunięto poprawnie obiekt klasy Account");
-            
+
             return status;
         }
 
         public int AddAccount(Account account)
         {
-            using LiteDatabase db = new LiteDatabase(_dbAccountsPath);
+            using LiteDatabase accountDb = new LiteDatabase(_dbAccountsPath);
+            using LiteDatabase paymentDb = new LiteDatabase(_dbPaymentsPath);
 
-            ILiteCollection<Account> accounts = db.GetCollection<Account>();
-            ILiteCollection<Payment> payments = db.GetCollection<Payment>();
+            ILiteCollection<Account> accounts = accountDb.GetCollection<Account>();
+            ILiteCollection<Payment> payments = paymentDb.GetCollection<Payment>();
+
+            string newPaymentAccountNumber = string.Empty;
+            do
+            {
+                newPaymentAccountNumber = RandomGenerator.GetAccountNumber();
+            } while(payments.Exists(p => p.AccountNumber == newPaymentAccountNumber));
 
             int id = accounts.Insert(account);
             payments.Insert(new Payment
             {
-                AccountNumber = account.AccountNumber,
-                AccountBalance = account.AccountBalance
+                Id = id,
+                AccountNumber = newPaymentAccountNumber
             });
 
             _logger.LogInformation("Dodano poprawnie obiekt klasy Account");
@@ -139,28 +143,12 @@ namespace WebService.Services
             return status;
         }
 
-        private void TemporaryFillDatabase()
-        {
-            using LiteDatabase db = new LiteDatabase(_dbPaymentsPath);
-            ILiteCollection<Payment> payments = db.GetCollection<Payment>();
-            payments.Insert(new Payment
-            {
-                AccountNumber = "1234",
-                AccountBalance = 100M
-            });
-            payments.Insert(new Payment
-            {
-                AccountNumber = "qwer",
-                AccountBalance = 100M
-            });
-        }
-
         private void SavingPaymentQueueToDB()
         {
             _logger.LogInformation("Uruchomiono wątek w tle");
             while (true)
             {
-                
+
                 //Debug.WriteLine("Wątek 1 zgłasza się");
                 if (queuePayments.Count > 0 && !isPaymentQueueMovedToDB)
                 {
