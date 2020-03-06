@@ -15,19 +15,19 @@ namespace WebService.Controllers
         }
 
         [HttpPost("transfer")] //http://localhost:5000/bank/transfer?amount=25.00&accountNumberSender=1234&accountNumberReciver=qwer
-        public IActionResult TransferMoney(decimal amount, string accountNumberSender, string accountNumberReciver)
+        public IActionResult TransferMoney([FromBody]TransferData data)
         {
-            Payment sender = _db.ReadPayment(accountNumberSender),
-                receiver = _db.ReadPayment(accountNumberReciver);
+            Payment sender = _db.ReadPayment(data.Sender),
+                receiver = _db.ReadPayment(data.Receiver);
 
             if (sender is null || receiver is null)
                 return BadRequest("Błędne numery kont");
 
-            if (amount > sender.AccountBalance)
+            if (data.Amount > sender.AccountBalance)
                 return BadRequest("Zbyt mała kwota na koncie");
 
-            sender.AccountBalance -= amount;
-            receiver.AccountBalance += amount;
+            sender.AccountBalance -= data.Amount;
+            receiver.AccountBalance += data.Amount;
 
             _db.UpdatePayment(sender);
             _db.UpdatePayment(receiver);

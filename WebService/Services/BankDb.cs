@@ -92,12 +92,13 @@ namespace WebService.Services
         public bool DeleteAccount(int id)
         {
             using LiteDatabase db = new LiteDatabase(_dbAccountsPath);
+            using LiteDatabase paymentDb = new LiteDatabase(_dbPaymentsPath);
 
             ILiteCollection<Account> accounts = db.GetCollection<Account>();
+            ILiteCollection<Payment> payments = paymentDb.GetCollection<Payment>();
 
-            Account account = accounts.FindOne(a => a.Id == id);
-
-            bool status = accounts.Delete(account.Id);
+            payments.Delete(id);
+            bool status = accounts.Delete(id);
 
             _logger.LogInformation("Usunięto poprawnie obiekt klasy Account");
 

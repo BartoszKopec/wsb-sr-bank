@@ -21,7 +21,8 @@ namespace WebService.Controllers
             if (_db.ReadAccounts().Find(a => a.Pesel == account.Pesel) is null)
             {
                 int id = _db.AddAccount(account);
-                return Created($"/accounts/get/{id}", new { Id = id });
+                account.Id = id;
+                return Created($"/accounts/get/{id}", account);
             }
             else
             {
