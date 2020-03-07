@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Core.Models;
+using System;
 
 namespace WebService.Services
 {
@@ -129,6 +130,50 @@ namespace WebService.Services
             _logger.LogInformation("Dodano poprawnie obiekt klasy Account");
 
             return id;
+        }
+
+        public bool AddCard(int id)
+        {
+            using LiteDatabase accountDb = new LiteDatabase(_dbAccountsPath);
+            ILiteCollection<Account> accounts = accountDb.GetCollection<Account>();
+            Account account = accounts.FindById(id);
+
+            if (account is null)
+                return false; 
+
+            string newCardNumber;
+            do
+            {
+                newCardNumber = RandomGenerator.GetCardNumber();
+            } while (accounts.FindAll().Any(a => a.Cards.Find(c => c.NumberOfCard == newCardNumber) != null));
+
+
+            account.Cards.Add(new Card
+            {
+                NumberOfCard = newCardNumber,
+                SafeCode = RandomGenerator.GetCardSafeCode(),
+                Month = (byte)DateTime.Now.Month,
+                Year = (byte)((DateTime.Now.Year % 100) + 3)
+            });
+
+            bool status = accounts.Update(account);
+            return status;
+        }
+
+        public bool RemoveCard(int id, string cardNumber)
+        {
+            using LiteDatabase accountDb = new LiteDatabase(_dbAccountsPath);
+            ILiteCollection<Account> accounts = accountDb.GetCollection<Account>();
+            Account account = accounts.FindById(id);
+
+            if (account is null)
+                return false;
+
+            int removedCount = account.Cards.RemoveAll(c => c.NumberOfCard == cardNumber);
+
+            bool status = accounts.Update(account);
+
+            return removedCount == 1 && status;
         }
 
         public bool UpdateAccount(Account account)

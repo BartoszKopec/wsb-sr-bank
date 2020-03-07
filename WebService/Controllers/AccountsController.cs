@@ -78,5 +78,25 @@ namespace WebService.Controllers
                 return BadRequest("Nie ma takiego konta");
         }
 
+        [HttpPut("{id}/addcard")]
+        public IActionResult AddCardToAccount(int id)
+        {
+            bool status = _db.AddCard(id);
+            if (status is true)
+                return Ok();
+            else
+                return BadRequest("Nie ma takiego konta");
+        }
+
+        [HttpDelete("{id}/removecard/{cardId}")]
+        public IActionResult DeleteCardFromAccount(int id, string cardId)
+        {
+            bool status = _db.RemoveCard(id, cardId);
+            if (status is true)
+                return Ok();
+            else
+                return BadRequest("Nie ma takiego konta");
+        }
+
     }
 }

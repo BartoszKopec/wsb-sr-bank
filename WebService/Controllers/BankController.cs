@@ -23,17 +23,27 @@ namespace WebService.Controllers
             if (sender is null || receiver is null)
                 return BadRequest("Błędne numery kont");
 
+            Account senderAccount = _db.ReadAccount(sender.Id),
+                receiverAccount = _db.ReadAccount(receiver.Id);
+
             if (data.Amount > sender.AccountBalance)
                 return BadRequest("Zbyt mała kwota na koncie");
-            //if (sender.Name="BANKOMAT");
-            //{sender.AccountBallance+=sender.AccountBallance;}
-            //lecz można założyć, że AccountBallance jest zawsze zero i po prostu olać kombinacje na koncie bankomatowym
-            //else
-            //{
-            sender.AccountBalance -= data.Amount;
-            //}
-            //można to jeszcze zapisać na zasadzie if (sender.Name!="BANKOMAT"); wtedy normalne, jak nie tylko
-            receiver.AccountBalance += data.Amount;
+
+            if (receiverAccount.FirstName.ToLower() == "bankomat") //wypłata: z konta człowieka do bankomatu
+            {
+                receiver.AccountBalance -= data.Amount;
+                sender.AccountBalance -= data.Amount;
+            } 
+            else if(senderAccount.FirstName.ToLower() == "wplatomat") //wpłata do wpłatomatu
+            {
+                receiver.AccountBalance += data.Amount;
+                sender.AccountBalance += data.Amount;
+            }
+            else //przelew z konta klienta na konto firmy/klienta
+            {
+                sender.AccountBalance -= data.Amount;
+                receiver.AccountBalance += data.Amount;
+            }
 
             _db.UpdatePayment(sender);
             _db.UpdatePayment(receiver);

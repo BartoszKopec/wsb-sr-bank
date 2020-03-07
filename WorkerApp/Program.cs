@@ -12,7 +12,7 @@ namespace WorkerApp
     {
         private static CancellationTokenSource _tokenSource;
 
-        static async Task Main(string[] args)
+        static async Task Main()
         {
             _tokenSource = new CancellationTokenSource();
             Console.WriteLine("Aplikacja pracownika banku");
@@ -31,9 +31,10 @@ namespace WorkerApp
                 {
                     case "dodanie": await AddAccount(); break;
                     case "wszystkie": await ShowAccounts(); break;
+                    case "dane": await ShowOneAccount(); break;
                     case "wyjście": isEnd = true; break;
                     case "likwidacja": await DeleteAccount(); break;
-                    case "edycja": await UpgradeAccount(); break;
+                    case "edycja": await UpdateAccountData(); break;
                     default:
                         break;
                 }
@@ -70,7 +71,7 @@ namespace WorkerApp
         static async Task ShowAccounts()
         {
             WorkerApi api = new WorkerApi();
-            
+
             Console.WriteLine();
             Console.WriteLine("Wyświetlenie wszystkich kont:");
 
@@ -91,6 +92,36 @@ namespace WorkerApp
             else
                 Console.WriteLine(content);
         }
+
+        static async Task ShowOneAccount()
+        {
+            WorkerApi api = new WorkerApi();
+            Console.WriteLine();
+            Console.WriteLine("Pokazywanie zawartości konta konta:");
+            Console.WriteLine("Podaj Id konta:");
+            int id = int.Parse(Console.ReadLine());
+
+            (bool isSucces, string content)=await api.GetAccountData(id, _tokenSource.Token);
+            
+            if (isSucces)
+            {
+                Account account = JsonConvert.DeserializeObject<Account>(content);
+                Console.WriteLine();
+                Console.WriteLine(string.Format(
+                    "ID danego konta to: {0}\nImię właściciela konta to: {1}\nNazwisko właściciela konta to: {2}\nPESEL właściciela konta to: {3}", 
+                    account.Id, account.FirstName, account.LastName, account.Pesel
+                    ));
+                Console.WriteLine("Numery kart:");
+                foreach(var card in account.Cards)
+                {
+                    Console.WriteLine(card.NumberOfCard);
+                }
+            }
+            else
+                Console.WriteLine(content);
+
+        }
+
 
         static async Task DeleteAccount()
         {
@@ -119,57 +150,70 @@ namespace WorkerApp
             WorkerApi api = new WorkerApi();
             Console.WriteLine();
             
-            //zdobycie konta z bazy za pomocą podanego ID
             Console.WriteLine("Edycja konta. Podaj ID konta");
             int id = int.Parse(Console.ReadLine());
-            Account TheAccount = new Account();
             (bool isSucces, string content)=await api.GetAccountData(id, _tokenSource.Token);
-
+            
             if (isSucces)
-            { 
+            {
+                Account account = JsonConvert.DeserializeObject<Account>(content);
                 Console.WriteLine("-------------------");
-                //....................
-                //Zaktualizowanie pól tego pobranego konta
-                /*
-                0. to wszystko w pętli
-                1. pytamy usera co chce zmienić (imię, nazwisko, pesel, zakończ)
-                2. user wpisuje co chce zmienić
-                3. w switchu sprawdzamy co chce zmienić i wykonujemy odpowiednią akcję
-                   3.1 akcja "zakończ" przerwie pętlę i wyśle aktualizacje na serwer
-                   3.2 po wykonaniu innych akcji niż "zakończ" algorytm wróci do pkt 1
-                */
                 bool isEnd = false;
                 do
                 {
                     Console.WriteLine();
-                    Console.WriteLine("Podaj co chcesz zmodyfikować (imię, nazwisko, PESEL, zakończ):");
+                    Console.WriteLine("Podaj co chcesz zmodyfikować (imię, nazwisko, PESEL, karty, zakończ):");
                     string command = Console.ReadLine();
                     switch (command)
                     {
+                        case "karty":
+                            {
+                                Console.WriteLine("Dodać lub usunąć?");
+                                string cardCommand = Console.ReadLine();
+                                if(cardCommand.ToLower() == "dodać")
+                                {
+                                    (isSucces, content) = await api.AddCardToAccount(account.Id, _tokenSource.Token);
+                                    if(!isSucces)
+                                        Console.WriteLine(content);
+                                }
+                                else if(cardCommand.ToLower() == "usunąć")
+                                {
+                                    Console.WriteLine("Podaj nr karty do usunięcia:");
+                                    string cardNumber = Console.ReadLine();
+                                    (isSucces, content) = await api.RemoveCardToAccount(
+                                        account.Id, 
+                                        cardNumber, 
+                                        _tokenSource.Token);
+                                    if (!isSucces)
+                                        Console.WriteLine(content);
+                                }
+                                else
+                                    Console.WriteLine("Błędna komenda");
+                            }break;
                         case "imię":
                             {
                                 Console.WriteLine("Podaj imię:");
-                                TheAccount.FirstName = Console.ReadLine();
+                                account.FirstName = Console.ReadLine();
                                 break;
                             }
 
                         case "nazwisko":
                             {
                                 Console.WriteLine("Podaj nazwisko:");
-                                TheAccount.LastName = Console.ReadLine();
+                                account.LastName = Console.ReadLine();
                                 break;
                             }
 
                         case "PESEL":
                             {
                                 Console.WriteLine("Podaj PESEL:");
-                                TheAccount.Pesel = Console.ReadLine();
+                                account.Pesel = Console.ReadLine();
                                 break;
                             }
 
                         case "zakończ":
                             {
-                                (isSucces, content) = await api.UpdateAccountData(TheAccount, _tokenSource.Token);
+                                (isSucces, content) = await api.UpdateAccountData(account, _tokenSource.Token);
                                 if (!isSucces)
                                 {
                                     Console.WriteLine(content);
@@ -178,19 +222,10 @@ namespace WorkerApp
                                 isEnd = true; 
                                 break;
                             }
-                            
-                            
                         default:
                             break;
                     }
                 } while (!isEnd);
-
-
-
-
-                //....................
-                //wysłanie aktualizacji na serwer
-
             }
             else
             {

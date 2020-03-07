@@ -30,8 +30,11 @@ namespace WorkerApp.Services
         public async Task<(bool, string)> DeleteAccount(int id, CancellationToken token) =>
             await DeleteAsync($"/accounts/delete/{id}", token);
 
+        public async Task<(bool, string)> AddCardToAccount(int id, CancellationToken token) =>
+            await PutAsync($"/accounts/{id}/addcard", "", token);
 
-
+        public async Task<(bool, string)> RemoveCardToAccount(int id, string cardNumber, CancellationToken token) =>
+            await DeleteAsync($"/accounts/{id}/removecard/{cardNumber}", token);
 
     }
 }

@@ -20,5 +20,18 @@ namespace WebService.Services
             return accountNumber;
         }
 
+        public static string GetCardNumber()
+        {
+            Random random = new Random();
+            int number = random.Next(10000, 99999);
+            return number.ToString();
+        }
+
+        public static short GetCardSafeCode()
+        {
+            Random random = new Random();
+            short number = (short)random.Next(100, 999);
+            return number;
+        }
     }
 }
