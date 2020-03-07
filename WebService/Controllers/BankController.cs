@@ -25,8 +25,14 @@ namespace WebService.Controllers
 
             if (data.Amount > sender.AccountBalance)
                 return BadRequest("Zbyt mała kwota na koncie");
-
+            //if (sender.Name="BANKOMAT");
+            //{sender.AccountBallance+=sender.AccountBallance;}
+            //lecz można założyć, że AccountBallance jest zawsze zero i po prostu olać kombinacje na koncie bankomatowym
+            //else
+            //{
             sender.AccountBalance -= data.Amount;
+            //}
+            //można to jeszcze zapisać na zasadzie if (sender.Name!="BANKOMAT"); wtedy normalne, jak nie tylko
             receiver.AccountBalance += data.Amount;
 
             _db.UpdatePayment(sender);

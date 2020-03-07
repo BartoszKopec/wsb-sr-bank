@@ -142,36 +142,55 @@ namespace WorkerApp
                 do
                 {
                     Console.WriteLine();
-                    Console.WriteLine("Podaj komendę (dodanie, likwidacja, edycja, dane, wszystkie, wyjście):");
+                    Console.WriteLine("Podaj co chcesz zmodyfikować (imię, nazwisko, PESEL, zakończ):");
                     string command = Console.ReadLine();
                     switch (command)
                     {
-                        case "dodanie": await AddAccount(); break;
-                        case "wszystkie": await ShowAccounts(); break;
-                        case "wyjście": isEnd = true; break;
-                        case "likwidacja": await DeleteAccount(); break;
-                        case "edycja": await UpgradeAccount(); break;
+                        case "imię":
+                            {
+                                Console.WriteLine("Podaj imię:");
+                                TheAccount.FirstName = Console.ReadLine();
+                                break;
+                            }
+
+                        case "nazwisko":
+                            {
+                                Console.WriteLine("Podaj nazwisko:");
+                                TheAccount.LastName = Console.ReadLine();
+                                break;
+                            }
+
+                        case "PESEL":
+                            {
+                                Console.WriteLine("Podaj PESEL:");
+                                TheAccount.Pesel = Console.ReadLine();
+                                break;
+                            }
+
+                        case "zakończ":
+                            {
+                                (isSucces, content) = await api.UpdateAccountData(TheAccount, _tokenSource.Token);
+                                if (!isSucces)
+                                {
+                                    Console.WriteLine(content);
+                                }
+                                Console.WriteLine("Poprawiono konto o numerze ID " + id);
+                                isEnd = true; 
+                                break;
+                            }
+                            
+                            
                         default:
                             break;
                     }
                 } while (!isEnd);
 
-                Console.WriteLine("Podaj imię:");
-                TheAccount.FirstName = Console.ReadLine();
-                Console.WriteLine("Podaj nazwisko:");
-                TheAccount.LastName = Console.ReadLine();
-                Console.WriteLine("Podaj PESEL:");
-                TheAccount.Pesel = Console.ReadLine();
-                Console.WriteLine("Poprawiono konto o numerze ID " + id);
+
 
 
                 //....................
                 //wysłanie aktualizacji na serwer
-                (isSucces, content) = await api.UpdateAccountData(TheAccount, _tokenSource.Token);
-                if (!isSucces)
-                {
-                    Console.WriteLine(content);
-                }
+
             }
             else
             {
