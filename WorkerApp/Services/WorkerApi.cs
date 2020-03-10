@@ -20,7 +20,11 @@ namespace WorkerApp.Services
 
         public async Task<(bool, string)> GetAccountData(int id, CancellationToken token) =>
             await GetAsync($"/accounts/get/{id}", token);
-        
+
+        public async Task<(bool, string)> GetPaymentData(int id, CancellationToken token) =>
+            await GetAsync($"/bank/payment?id={id}", token);
+
+
         public async Task<(bool, string)> GetAllAccounts(CancellationToken token) =>
             await GetAsync("/accounts/getall", token);
         

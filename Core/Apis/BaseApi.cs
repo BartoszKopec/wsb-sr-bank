@@ -20,6 +20,7 @@ namespace Core.Apis
                 BaseAddress = _baseAddress,
                 Timeout = new TimeSpan(hours: 0, minutes: 0, seconds: 10)
             };
+            _restClient.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
         }
 
         protected async Task<(bool status, string content)> GetAsync(string resource, CancellationToken token)
@@ -31,7 +32,10 @@ namespace Core.Apis
 
         protected async Task<(bool status, string content)> PostAsync(string resource, string jsonBody, CancellationToken token)
         {
-            HttpResponseMessage response = await _restClient.PostAsync(resource, new StringContent(jsonBody), token);
+            HttpResponseMessage response = await _restClient.PostAsync(
+                resource, 
+                new StringContent(jsonBody, Encoding.UTF8, "application/json"), 
+                token);
             string content = await response.Content.ReadAsStringAsync();
             return (response.IsSuccessStatusCode, content);
         }
@@ -45,7 +49,10 @@ namespace Core.Apis
 
         protected async Task<(bool status, string content)> PutAsync(string resource, string jsonBody, CancellationToken token)
         {
-            HttpResponseMessage response = await _restClient.PutAsync(resource, new StringContent(jsonBody), token);
+            HttpResponseMessage response = await _restClient.PutAsync(
+                resource,
+                new StringContent(jsonBody, Encoding.UTF8, "application/json"), 
+                token);
             string content = await response.Content.ReadAsStringAsync();
             return (response.IsSuccessStatusCode, content);
         }

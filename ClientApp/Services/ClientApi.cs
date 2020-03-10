@@ -22,10 +22,10 @@ namespace ClientApp.Services
             await GetAsync($"/account/get/{id}", token);
 
         //-----------------------------------------------------------------
-    //    public async Task<(bool, string)> GetPaymentData(string number, CancellationToken token) =>
-    //await GetAsync($"/payment/get/{number}", token);
-    //w WorkerApi to się odwołuje do BaseApi
-    //Get Payment w BankController odwołuje się do ReadPayment w BankDB
+        public async Task<(bool, string)> GetPaymentData(string number, CancellationToken token) =>
+            await GetAsync($"/bank/payment/{number}", token);
+        //w WorkerApi to się odwołuje do BaseApi
+        //Get Payment w BankController odwołuje się do ReadPayment w BankDB
         //-----------------------------------------------------------------
     }
 }

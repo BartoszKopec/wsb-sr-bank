@@ -5,12 +5,14 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using ClientApp.Services;
+using System.Globalization;
 
 namespace ClientApp
 {
     class Program
     {
         private static CancellationTokenSource _tokenSource;
+        private static readonly NumberFormatInfo formatInfo = new CultureInfo("en").NumberFormat;
 
         static async Task Main()
         {
@@ -25,7 +27,7 @@ namespace ClientApp
             do
             {
                 Console.WriteLine();
-                Console.WriteLine("Podaj komendę (wpłata, wyplata, przelew, konto, kupno, wyjście):");
+                Console.WriteLine("Podaj komendę (wpłata, wypłata, przelew, konto, kupno, wyjście):");
                 string command = Console.ReadLine();
                 switch (command)
                 {
@@ -41,7 +43,6 @@ namespace ClientApp
                 }
             } while (!isEnd);
         }
-
 
         static async Task ShowMyAccount()
         {
@@ -65,54 +66,45 @@ namespace ClientApp
                     "Na koncie nr: {0}\n obecnie znajduje się następująca kwota środków w złotych: {1}",
                     payment.AccountNumber, payment.AccountBalance
                     ));
-                
-
             }
             else
                 Console.WriteLine(content);
-
         }
 
         static async Task AddMoney()
         {
-            //włożenie do wpłatomatu karty, na której jest numer konta wchipowany
-            //wpłatomat nosi automatycznie name wpłatomat oraz także ma swój numer konta, który praktycznie oznacza, ile jest pieniędzy w pojemnikach wpłatomatu
-            //pobranie z bazy payment, bowiem może nie ma takiego konta
-            //do wysłania potrzeba wszystkich danych z TransfertData czyli public decimal Amount, Sender oraz Receiver
-            //potem wywołać funcję TransferMoney na BankController
-
             ClientApi api = new ClientApi();
             Console.WriteLine();
-            Console.Write("Wpłacanie do wpłatomatu.");
-            //na karcie jest w chipie zawsze numer konta automatycznie wczytywany, tutaj, siłą rzeczy trzeba podać
+            Console.WriteLine("Wpłacanie do wpłatomatu.");
             Console.WriteLine("Podanie numeru konta:");
             string number = Console.ReadLine();
-            (bool isSucces, string content) = await api.GetPaymentData(number, _tokenSource.Token);
 
+            (bool isSucces, string content) = await api.GetPaymentData(number, _tokenSource.Token);
             if (isSucces)
             {
-                Payment receiver = JsonConvert.DeserializeObject<Payment>(content);//przekształcenie Json na Payment
-                //konto bankomatu/wpłatomatu jest w chipie bankomatu, nie trzeba nigdzie sięgać oraz potwierdzać istnienia
-                //Sender i Receiver w TransferDFata to rozumiem numery kont Sendera i receivera, bowiem to zwykłe stringi
-                Console.WriteLine();
-                Console.WriteLine("Proszę przygotować pieniądze do wpłaty. Ażeby dokonać wpłaty należy nacisnąć przycisk na konsoli wpłatomatu");
-                Console.ReadKey();
+                Payment receiver = JsonConvert.DeserializeObject<Payment>(content);
+                Console.WriteLine("Proszę przygotować pieniądze do wpłaty.");
                 Console.WriteLine("Kwota:");
-                decimal Amount = decimal.Parse(Console.ReadLine());
+                decimal amount = decimal.Parse(Console.ReadLine(), formatInfo);
 
-                //obiekt TransferMoney
-                TransferData data = new TransferData();
-                data.Sender = "111111";//przykładowy numer bankomatu/wpłatomatu, zawsze name wpłatomatu to wpłatomat
-                data.Receiver = receiver.AccountNumber;
-                data.Amount = Amount;
+                TransferData data = new TransferData
+                {
+                    Sender = "NJIMQF", //nr wpłatomatu
+                    Receiver = receiver.AccountNumber,
+                    Amount = amount
+                };
 
-                BankController.TransferMoney(data);
-
-
+                (isSucces, content) = await api.PostTransfer(data, _tokenSource.Token);
+                if (isSucces)
+                {
+                    TransferResult transferResult = JsonConvert.DeserializeObject<TransferResult>(content);
+                    Console.WriteLine("Masz obecnie na koncie " + transferResult.Receiver.AccountBalance + " zł.");
+                }
+                else
+                    Console.WriteLine(content);
             }
             else
                 Console.WriteLine(content);
-
         }
 
         static async Task WithdrawMoney()
@@ -120,37 +112,34 @@ namespace ClientApp
             ClientApi api = new ClientApi();
             Console.WriteLine();
             Console.Write("Wypłacanie z bankomatu.");
-            //na karcie jest w chipie zawsze numer konta automatycznie wczytywany, tutaj, siłą rzeczy trzeba podać
             Console.WriteLine("Podanie numeru:");
             string number = Console.ReadLine();
-            (bool isSucces, string content) = await api.GetPaymentData(number, _tokenSource.Token);
 
+            (bool isSucces, string content) = await api.GetPaymentData(number, _tokenSource.Token);
             if (isSucces)
             {
-                Payment sender = JsonConvert.DeserializeObject<Payment>(content);//przekształcenie Json na Payment
-                //konto bankomatu/wpłatomatu jest w chipie bankomatu, nie trzeba nigdzie sięgać oraz potwierdzać istnienia
-                //Sender i Receiver w TransferDFata to rozumiem numery kont Sendera i receivera, bowiem to zwykłe stringi
-                Console.WriteLine();
-                Console.WriteLine("Ażeby dokonać wypłaty należy nacisnąć przycisk na konsoli bankoomatu");
-                Console.ReadKey();
+                Payment sender = JsonConvert.DeserializeObject<Payment>(content);
                 Console.WriteLine("Kwota:");
-                decimal Amount = decimal.Parse(Console.ReadLine());
+                decimal amount = decimal.Parse(Console.ReadLine(), formatInfo);
 
-                //obiekt TransferMoney
-                TransferData data = new TransferData();
-                data.Receiver = "111112";
-                data.Sender = sender.AccountNumber;
-                data.Amount = Amount;
+                TransferData data = new TransferData
+                {
+                    Receiver = "XABQKR",
+                    Sender = sender.AccountNumber,
+                    Amount = amount
+                };
 
-                BankController.TransferMoney(data);
-                
-
+                (isSucces, content) = await api.PostTransfer(data, _tokenSource.Token);
+                if (isSucces)
+                {
+                    TransferResult transferResult = JsonConvert.DeserializeObject<TransferResult>(content);
+                    Console.WriteLine("Masz obecnie na koncie " + transferResult.Sender.AccountBalance + " zł.");
+                }
+                else
+                    Console.WriteLine(content);
             }
             else
                 Console.WriteLine(content);
-
-
-
         }
 
         static async Task BuySomething()
@@ -158,38 +147,34 @@ namespace ClientApp
             ClientApi api = new ClientApi();
             Console.WriteLine();
             Console.Write("Kupno.");
-            //na karcie jest w chipie zawsze numer konta automatycznie wczytywany, tutaj, siłą rzeczy trzeba podać
             Console.WriteLine("Podanie numeru:");
             string number = Console.ReadLine();
-            (bool isSucces, string content) = await api.GetPaymentData(number, _tokenSource.Token);
 
+            (bool isSucces, string content) = await api.GetPaymentData(number, _tokenSource.Token);
             if (isSucces)
             {
-                Payment sender = JsonConvert.DeserializeObject<Payment>(content);//przekształcenie Json na Payment
-                //konto sklepu jest zawsze automatycznie dołączane do czytnika, 
-                //tutaj będzie w bazie, jednak normalnie odpowiada za to czytnik, który łączy sie z bankiem sprzedającego
-                //Sender i Receiver w TransferDFata to rozumiem numery kont Sendera i receivera, bowiem to zwykłe stringi
-                Console.WriteLine();
-                Console.WriteLine("Proszę zbliżyć kartę do czytnika");
-                Console.ReadKey();
+                Payment sender = JsonConvert.DeserializeObject<Payment>(content);
                 Console.WriteLine("Kwota:");
-                decimal Amount = decimal.Parse(Console.ReadLine());
+                decimal Amount = decimal.Parse(Console.ReadLine(), formatInfo);
 
-                //obiekt TransferMoney
-                TransferData data = new TransferData();
-                data.Receiver = "222222";//przykładowe konto sklepu
-                data.Sender = sender.AccountNumber;
-                data.Amount = Amount;
+                TransferData data = new TransferData
+                {
+                    Receiver = "IMNXDE", //konto sklepu
+                    Sender = sender.AccountNumber,
+                    Amount = Amount
+                };
 
-                BankController.TransferMoney(data);
-
-
+                (isSucces, content) = await api.PostTransfer(data, _tokenSource.Token);
+                if (isSucces)
+                {
+                    TransferResult transferResult = JsonConvert.DeserializeObject<TransferResult>(content);
+                    Console.WriteLine("Masz obecnie na koncie " + transferResult.Sender.AccountBalance + " zł.");
+                }
+                else
+                    Console.WriteLine(content);
             }
             else
                 Console.WriteLine(content);
-
-
-
         }
 
         static async Task Transfer()
@@ -199,36 +184,35 @@ namespace ClientApp
             Console.Write("Przelew.");
             Console.WriteLine("Podanie numeru konta przekazującego środki:");
             string numberSender = Console.ReadLine();
+         
             (bool isSucces, string content) = await api.GetPaymentData(numberSender, _tokenSource.Token);
-
             if (isSucces)
             {
-                Payment sender = JsonConvert.DeserializeObject<Payment>(content);//przekształcenie Json na Payment
-                //konto sklepu jest zawsze automatycznie dołączane do czytnika, 
-                //tutaj będzie w bazie, jednak normalnie odpowiada za to czytnik, który łączy sie z bankiem sprzedającego
-                //Sender i Receiver w TransferDFata to rozumiem numery kont Sendera i receivera, bowiem to zwykłe stringi
+                Payment sender = JsonConvert.DeserializeObject<Payment>(content);
                 Console.WriteLine();
                 Console.WriteLine("Proszę podać numer konta odbiorcy");
                 string numberReceiver = Console.ReadLine();
                 Console.WriteLine("Kwota:");
-                decimal Amount = decimal.Parse(Console.ReadLine());
+                decimal amount = decimal.Parse(Console.ReadLine());
 
-                //obiekt TransferMoney
-                TransferData data = new TransferData();
-                data.Receiver = numberReceiver;
-                data.Sender = sender.AccountNumber;
-                data.Amount = Amount;
+                TransferData data = new TransferData
+                {
+                    Receiver = numberReceiver,
+                    Sender = sender.AccountNumber,
+                    Amount = amount
+                };
 
-                BankController.TransferMoney(data);
-
-
+                (isSucces, content) = await api.PostTransfer(data, _tokenSource.Token);
+                if (isSucces)
+                {
+                    TransferResult transferResult = JsonConvert.DeserializeObject<TransferResult>(content);
+                    Console.WriteLine("Masz obecnie na koncie " + transferResult.Sender.AccountBalance + " zł.");
+                }
+                else
+                    Console.WriteLine(content);
             }
             else
                 Console.WriteLine(content);
-
-
-
-        }
-     
+        }     
     }
 }

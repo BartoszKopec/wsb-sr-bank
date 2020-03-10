@@ -26,29 +26,32 @@ namespace WebService.Controllers
             Account senderAccount = _db.ReadAccount(sender.Id),
                 receiverAccount = _db.ReadAccount(receiver.Id);
 
-            if (data.Amount > sender.AccountBalance)
-                return BadRequest("Zbyt mała kwota na koncie");
-
-            if (receiverAccount.FirstName.ToLower() == "bankomat") //wypłata: z konta człowieka do bankomatu
-            {
-                receiver.AccountBalance -= data.Amount;
-                sender.AccountBalance -= data.Amount;
-            } 
-            else if(senderAccount.FirstName.ToLower() == "wplatomat") //wpłata do wpłatomatu
+            if (senderAccount.FirstName.ToLower() == "wplatomat") //wpłata do wpłatomatu
             {
                 receiver.AccountBalance += data.Amount;
                 sender.AccountBalance += data.Amount;
             }
-            else //przelew z konta klienta na konto firmy/klienta
+            else
             {
-                sender.AccountBalance -= data.Amount;
-                receiver.AccountBalance += data.Amount;
+                if (data.Amount > sender.AccountBalance)
+                    return BadRequest("Zbyt mała kwota na koncie");
+
+                if (receiverAccount.FirstName.ToLower() == "bankomat") //wypłata: z konta człowieka do bankomatu
+                {
+                    receiver.AccountBalance -= data.Amount;
+                    sender.AccountBalance -= data.Amount;
+                }
+                else //przelew z konta klienta na konto firmy/klienta
+                {
+                    sender.AccountBalance -= data.Amount;
+                    receiver.AccountBalance += data.Amount;
+                }
             }
 
             _db.UpdatePayment(sender);
             _db.UpdatePayment(receiver);
 
-            return Ok(new { Sender = sender, Reciver = receiver });
+            return Ok(new TransferResult { Sender = sender, Receiver = receiver });
         }
 
         [HttpGet("payment/{accountNumber}")] //http://localhost:5000/bank/payment/1234
@@ -59,6 +62,16 @@ namespace WebService.Controllers
                 return BadRequest("Brak takiego konta płatnościowego");
             else
                 return Ok(payment);
+        }
+
+        [HttpGet("payment")] //http://localhost:5000/bank/payment?id=1
+        public IActionResult GetPayment([FromQuery]int id)
+        {
+            Payment payment = _db.ReadPayment(id);
+            if (payment is null)
+                return BadRequest("Brak takiego konta płatnościowego");
+            else
+                return Ok(payment.AccountNumber);
         }
     }
 }

@@ -60,7 +60,13 @@ namespace WorkerApp
             if (isSucces)
             {
                 int id = JsonConvert.DeserializeObject<Account>(content).Id;
-                Console.WriteLine($"Pomyślnie dodano konto. Id nowego konta: {id}");
+                (isSucces, content) = await api.GetPaymentData(id, _tokenSource.Token);
+                if(isSucces)
+                {
+                    Console.WriteLine($"Pomyślnie dodano konto. Id nowego konta: {id}, numer konta: {content}");
+                }
+                else
+                    Console.WriteLine(content);
             }
             else
             {

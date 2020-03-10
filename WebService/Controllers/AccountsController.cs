@@ -45,27 +45,7 @@ namespace WebService.Controllers
             }
         }
 
-        //------------------------------------------------------------------------------------
-        [HttpGet("get/{AccountNumber}")]
-        public IActionResult GetMy(string AccountNumber)
-        {
-            Payment number = _db.ReadAccount(AccountNumber);
-
-            if (account is null)
-            {
-                return BadRequest("Nie ma takiego konta");
-            }
-            else
-            {
-                return Ok(account);
-            }
-        }
-        //---------------------------------------------------------------------------------------
-
-
-
-
-
+  
         [HttpGet("getall")]
         public IActionResult GetAll()
         {

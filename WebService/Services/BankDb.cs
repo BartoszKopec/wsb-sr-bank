@@ -40,6 +40,24 @@ namespace WebService.Services
             return payment;
         }
 
+        public Payment ReadPayment(int id)
+        {
+            Payment payment;
+            lock (queuePayments)
+            {
+                payment = queuePayments.Find(element => element.Id == id);
+            }
+            if (payment is null)
+            {
+                using LiteDatabase db = new LiteDatabase(_dbPaymentsPath);
+                ILiteCollection<Payment> payments = db.GetCollection<Payment>();
+                payment = payments.FindOne(p => p.Id == id);
+            }
+            _logger.LogInformation("Odczytano poprawnie obiekt klasy Payment");
+            return payment;
+        }
+
+
         public void UpdatePayment(Payment newPayment)
         {
             bool isPaymentFound = false;
@@ -124,8 +142,11 @@ namespace WebService.Services
             payments.Insert(new Payment
             {
                 Id = id,
-                AccountNumber = newPaymentAccountNumber
+                AccountNumber = newPaymentAccountNumber,
+                AccountBalance = 100m
             });
+
+
 
             _logger.LogInformation("Dodano poprawnie obiekt klasy Account");
 
