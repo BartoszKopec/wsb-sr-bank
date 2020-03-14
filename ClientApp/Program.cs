@@ -27,7 +27,7 @@ namespace ClientApp
             do
             {
                 Console.WriteLine();
-                Console.WriteLine("Podaj komendę (wpłata, wypłata, przelew, konto, kupno, wyjście):");
+                Console.WriteLine("Podaj komendę (wpłata, wypłata, przelew, konto, kupno, demo pracy współbieżnej (komenda demo), wyjście):");
                 string command = Console.ReadLine();
                 switch (command)
                 {
@@ -37,11 +37,52 @@ namespace ClientApp
                     case "wyjście": isEnd = true; break;
                     case "przelew": await Transfer();break;
                     case "kupno": await BuySomething(); break;
-
+                    case "demo": RunDemo(); break;
                     default:
                         break;
                 }
             } while (!isEnd);
+        }
+
+        static void RunDemo()
+        {
+            Console.Write("Demo.");
+            //Console.WriteLine("Podanie numeru konta:");
+            //string numberReceiver = Console.ReadLine();
+
+            DateTime start = DateTime.Now;
+            async void threadAddMoney(string account)
+            {
+                while (DateTime.Now <= start.AddMilliseconds(2000)) { }
+
+                ClientApi api = new ClientApi();
+                TransferData data = new TransferData
+                {
+                    Sender = "wplatomat",
+                    Receiver = account,
+                    Amount = 0.01m
+                };
+                string message = $"Konto {account}, ";
+                (bool isSucces, string content) = await api.PostTransfer(data, _tokenSource.Token);
+                if (isSucces)
+                {
+                    TransferResult transferResult = JsonConvert.DeserializeObject<TransferResult>(content);
+                    message += $"ma obecnie na koncie " + transferResult.Receiver.AccountBalance + " zł.";
+                }
+                else
+                    message+=content;
+                Console.WriteLine(message);
+            }
+
+            Task.WhenAll(
+                Task.Run(()=> threadAddMoney("DUBQLL")),
+                Task.Run(()=> threadAddMoney("PVPSSF")),
+                Task.Run(() => threadAddMoney("WPPPTN")),
+                Task.Run(() => threadAddMoney("DEINYX")),
+                Task.Run(() => threadAddMoney("DHUHHV")),
+                Task.Run(() => threadAddMoney("ONDSEN")),
+                Task.Run(() => threadAddMoney("VQHNVB"))
+                );
         }
 
         static async Task ShowMyAccount()
@@ -89,7 +130,7 @@ namespace ClientApp
 
                 TransferData data = new TransferData
                 {
-                    Sender = "NJIMQF", //nr wpłatomatu
+                    Sender = "wplatomat", //nr wpłatomatu
                     Receiver = receiver.AccountNumber,
                     Amount = amount
                 };
@@ -124,7 +165,7 @@ namespace ClientApp
 
                 TransferData data = new TransferData
                 {
-                    Receiver = "XABQKR",
+                    Receiver = "bankomat",
                     Sender = sender.AccountNumber,
                     Amount = amount
                 };
@@ -159,7 +200,7 @@ namespace ClientApp
 
                 TransferData data = new TransferData
                 {
-                    Receiver = "IMNXDE", //konto sklepu
+                    Receiver = "sklep", //konto sklepu
                     Sender = sender.AccountNumber,
                     Amount = Amount
                 };

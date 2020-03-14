@@ -1,0 +1,19 @@
+{
+  "accounts": [
+    {
+      "firstName": "",
+      "lastName": "",
+      "PESEL": "",
+      "accountNumber": "",
+      "accountBalance": 0.00,
+      "cards": [
+        {
+          "numberOfCard": "",
+          "saveCode": 0,
+          "month": 0,
+          "year": 0
+        }
+      ]
+    }
+  ]
+}

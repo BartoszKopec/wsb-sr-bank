@@ -45,7 +45,6 @@ namespace WebService.Controllers
             }
         }
 
-  
         [HttpGet("getall")]
         public IActionResult GetAll()
         {

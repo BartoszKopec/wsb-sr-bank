@@ -12,15 +12,22 @@ namespace WebService.Services
     public class BankDb
     {
         private readonly List<Payment> queuePayments = new List<Payment>();
+        private static readonly LiteDatabase _db= new LiteDatabase("payments.db");
         private readonly ILogger<BankDb> _logger;
         private readonly string _dbPaymentsPath = "payments.db", _dbAccountsPath = "accounts.db";
         private bool isPaymentQueueMovedToDB;
 
         public BankDb(ILogger<BankDb> logger)
         {
+            //_db = new LiteDatabase(_dbPaymentsPath);
             _logger = logger;
             Task.Factory.StartNew(SavingPaymentQueueToDB,
                 TaskCreationOptions.LongRunning);
+        }
+
+        public BankDb()
+        {
+            _logger = new Logger<BankDb>(new LoggerFactory());
         }
 
         public Payment ReadPayment(string accountNumber)
@@ -32,11 +39,11 @@ namespace WebService.Services
             }
             if (payment is null)
             {
-                using LiteDatabase db = new LiteDatabase(_dbPaymentsPath);
-                ILiteCollection<Payment> payments = db.GetCollection<Payment>();
+                //using LiteDatabase db = new LiteDatabase($"FileName={_dbPaymentsPath};ReadOnly=true");
+                ILiteCollection<Payment> payments = _db.GetCollection<Payment>();
                 payment = payments.FindOne(p => p.AccountNumber == accountNumber);
             }
-            _logger.LogInformation("Odczytano poprawnie obiekt klasy Payment");
+            //_logger.LogInformation("Odczytano poprawnie obiekt klasy Payment");
             return payment;
         }
 
@@ -75,7 +82,7 @@ namespace WebService.Services
                 if (!isPaymentFound)
                     queuePayments.Add(newPayment);
             }
-            _logger.LogInformation("Poprawnie zaktualozowano Payment");
+            _logger.LogInformation("Poprawnie zaktualizowano Payment");
         }
 
         public Account ReadAccount(int id)
@@ -124,6 +131,29 @@ namespace WebService.Services
             return status;
         }
 
+        public int AddSpecialAccount(string accountNumberName)
+        {
+            using LiteDatabase accountDb = new LiteDatabase(_dbAccountsPath);
+            using LiteDatabase paymentDb = new LiteDatabase(_dbPaymentsPath);
+
+            ILiteCollection<Account> accounts = accountDb.GetCollection<Account>();
+            ILiteCollection<Payment> payments = paymentDb.GetCollection<Payment>();
+
+            int id = accounts.Insert(new Account
+            {
+                FirstName = accountNumberName
+            });
+            payments.Insert(new Payment
+            {
+                Id = id,
+                AccountNumber = accountNumberName,
+                AccountBalance = 10000m
+            });
+
+            return id;
+        }
+
+
         public int AddAccount(Account account)
         {
             using LiteDatabase accountDb = new LiteDatabase(_dbAccountsPath);
@@ -136,7 +166,7 @@ namespace WebService.Services
             do
             {
                 newPaymentAccountNumber = RandomGenerator.GetAccountNumber();
-            } while(payments.Exists(p => p.AccountNumber == newPaymentAccountNumber));
+            } while (payments.Exists(p => p.AccountNumber == newPaymentAccountNumber));
 
             int id = accounts.Insert(account);
             payments.Insert(new Payment
@@ -145,8 +175,6 @@ namespace WebService.Services
                 AccountNumber = newPaymentAccountNumber,
                 AccountBalance = 100m
             });
-
-
 
             _logger.LogInformation("Dodano poprawnie obiekt klasy Account");
 
@@ -212,31 +240,22 @@ namespace WebService.Services
 
         private void SavingPaymentQueueToDB()
         {
-            _logger.LogInformation("Uruchomiono wątek w tle");
             while (true)
             {
-
-                //Debug.WriteLine("Wątek 1 zgłasza się");
                 if (queuePayments.Count > 0 && !isPaymentQueueMovedToDB)
                 {
-                    _logger.LogInformation("Wstawienie wypełnionej kolejki do bazy");
                     isPaymentQueueMovedToDB = true;
-                    using LiteDatabase db = new LiteDatabase(_dbPaymentsPath);
-                    ILiteCollection<Payment> payments = db.GetCollection<Payment>();
-                    lock (queuePayments)
+                    //using LiteDatabase db = new LiteDatabase(_dbPaymentsPath);
+                    lock (_db)
                     {
-                        queuePayments.ForEach(element =>
+                        ILiteCollection<Payment> payments = _db.GetCollection<Payment>();
+                        lock (queuePayments)
                         {
-                            if (payments.Exists(p => p.AccountNumber == element.AccountNumber))
-                                payments.Update(element);
-                            else
-                                payments.Insert(element);
-                        });
-                        queuePayments.Clear();
+                            payments.Upsert(queuePayments);
+                            queuePayments.Clear();
+                        }
                     }
                     isPaymentQueueMovedToDB = false;
-                    _logger.LogInformation("Poprawnie zapisano kolejkę do bazy");
-
                 }
                 Thread.Sleep(1000);
             }
